@@ -14,11 +14,10 @@ pub fn day1(args: &Arguments) -> Result<()> {
     }
     let numbers = numbers;
 
-
     let result = if args.part == 1 {
-        part1(&numbers)
+        count_increasing_windows(&numbers, 2)
     } else {
-        part2(&numbers)
+        count_increasing_windows(&numbers, 4)
     }?;
 
     info!("{:?}", result);
@@ -26,32 +25,11 @@ pub fn day1(args: &Arguments) -> Result<()> {
     Ok(())
 }
 
-fn part1(numbers: &Vec<i64>) -> Result<i32> {
-    let mut count = 0;
-    let mut previous = numbers[0];
-    for i in 1..numbers.len() {
-        let next = numbers[i];
-        if next > previous {
-            count += 1;
-        }
-        previous = next;
-    }
-
-    Ok(count)
-}
-
-fn part2(numbers: &Vec<i64>) -> Result<i32> {
-    let mut count = 0;
-
-    let mut previous_sum = numbers[0] + numbers[1] + numbers[2];
-
-    for i in 0..numbers.len() - 3 {
-        let next_sum = previous_sum - numbers[i] + numbers[i + 3];
-        if next_sum > previous_sum {
-            count += 1;
-        }
-        previous_sum = next_sum;
-    }
+fn count_increasing_windows(numbers: &Vec<i64>, window_size: usize) -> Result<usize> {
+    let count = numbers
+        .windows(window_size)
+        .filter(|window| window[0] < window[window_size - 1])
+        .count();
 
     Ok(count)
 }

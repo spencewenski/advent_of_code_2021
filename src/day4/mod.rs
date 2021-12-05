@@ -8,14 +8,14 @@ pub fn day4(args: &Arguments) -> Result<()> {
     let mut reader = reader(args.src_file.as_ref())?;
 
     let mut first_line = String::new();
-    reader.read_line(&mut first_line);
+    reader.read_line(&mut first_line)?;
     let numbers: Vec<usize> = first_line
         .split(",")
         .map(|s| s.trim().parse().unwrap())
         .collect();
 
     let mut empty_line = String::new();
-    reader.read_line(&mut empty_line);
+    reader.read_line(&mut empty_line)?;
 
     let mut boards: Vec<Board> = Vec::new();
     while let Ok(board) = Board::new(&mut reader) {

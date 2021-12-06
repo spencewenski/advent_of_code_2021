@@ -36,10 +36,14 @@ impl Arguments {
             parser.refer(&mut args.src_file).add_option(
                 &["-i", "--input-file"],
                 StoreOption,
-                "Input file",
+                "Input file. Defaults to 'input/day<number>.input",
             );
 
             parser.parse_args_or_exit();
+        }
+
+        if args.src_file.is_none() {
+            args.src_file = Some(format!("input/day{}.input", args.day));
         }
 
         args

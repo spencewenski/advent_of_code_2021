@@ -12,9 +12,9 @@ pub fn day6(args: &Arguments) -> Result<()> {
     let numbers = line.split(",").map(|s| s.trim().parse().unwrap()).collect();
 
     let result = if args.part == 1 {
-        part1(&numbers)
+        simulate_fish(numbers, 80)
     } else {
-        part2(&numbers)
+        simulate_fish(numbers, 256)
     }?;
 
     info!("{:?}", result);
@@ -22,10 +22,31 @@ pub fn day6(args: &Arguments) -> Result<()> {
     Ok(())
 }
 
-fn part1(numbers: &Vec<u32>) -> Result<usize> {
-    Ok(0)
+const RESET_COUNT: usize = 6;
+const INITIAL_COUNT: usize = 8;
+
+fn simulate_day(counts: &mut Vec<u64>) {
+    let num_at_zero = counts.remove(0);
+    counts.push(num_at_zero);
+    counts[RESET_COUNT] += num_at_zero;
 }
 
-fn part2(numbers: &Vec<u32>) -> Result<usize> {
-    Ok(0)
+fn simulate_fish(numbers: Vec<usize>, num_days: usize) -> Result<u64> {
+    let mut counts: Vec<u64> = Vec::new();
+
+    for _ in 0..INITIAL_COUNT + 1 {
+        counts.push(0);
+    }
+
+    for num in numbers {
+        counts[num] += 1;
+    }
+
+    for _ in 0..num_days {
+        simulate_day(&mut counts);
+    }
+
+    let total = counts.into_iter().reduce(|a, b| a + b).unwrap();
+
+    Ok(total)
 }

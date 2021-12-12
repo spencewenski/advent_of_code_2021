@@ -2,7 +2,6 @@ use crate::arguments::Arguments;
 use crate::io::reader;
 use anyhow::Result;
 use itertools::Itertools;
-use std::collections::HashSet;
 use std::io::BufRead;
 
 pub fn day10(args: &Arguments) -> Result<()> {

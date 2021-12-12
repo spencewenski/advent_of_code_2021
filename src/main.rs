@@ -1,6 +1,7 @@
 use advent_of_code_2021::arguments::Arguments;
 use advent_of_code_2021::day1::day1;
 use advent_of_code_2021::day10::day10;
+use advent_of_code_2021::day11::day11;
 use advent_of_code_2021::day2::day2;
 use advent_of_code_2021::day3::day3;
 use advent_of_code_2021::day4::day4;
@@ -39,6 +40,7 @@ fn main() -> Result<()> {
         8 => day8(&args)?,
         9 => day9(&args)?,
         10 => day10(&args)?,
+        11 => day11(&args)?,
         _ => {
             return Err(anyhow::Error::msg(format!(
                 "Unrecognized day number: {}",

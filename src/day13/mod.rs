@@ -36,7 +36,7 @@ pub fn day13(args: &Arguments) -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Eq, PartialEq, Hash, Clone)]
 struct Position {
     x: usize,
     y: usize,
@@ -79,10 +79,71 @@ impl Fold {
     }
 }
 
+fn fold_position(p: &Position, fold: &Fold) -> Position {
+    match fold {
+        Fold::Horizontal(y) => {
+            if p.y < *y {
+                p.to_owned()
+            } else {
+                Position::new(p.x, y - (p.y - y))
+            }
+        }
+        Fold::Vertical(x) => {
+            if p.x < *x {
+                p.to_owned()
+            } else {
+                Position::new(x - (p.x - x), p.y)
+            }
+        }
+    }
+}
+
+fn fold_once(positions: Vec<Position>, fold: &Fold) -> Vec<Position> {
+    positions
+        .into_iter()
+        .map(|p| fold_position(&p, fold))
+        .unique()
+        .collect()
+}
+
+fn fold(positions: Vec<Position>, folds: &[Fold]) -> Vec<Position> {
+    let mut positions = positions;
+    for f in folds {
+        positions = fold_once(positions, f);
+    }
+
+    positions
+}
+
 fn part1(positions: Vec<Position>, folds: Vec<Fold>) -> Result<usize> {
-    Ok(0)
+    let positions = fold_once(positions, folds.first().unwrap());
+    Ok(positions.len())
 }
 
 fn part2(positions: Vec<Position>, folds: Vec<Fold>) -> Result<usize> {
+    // fold everything
+    let positions = fold(positions, &folds);
+
+    // Display the result
+    let max_x = positions.iter().map(|p| p.x).max().unwrap();
+    let max_y = positions.iter().map(|p| p.y).max().unwrap();
+
+    let mut result: Vec<Vec<String>> = Vec::new();
+    for y in 0..max_y + 1 {
+        result.push(Vec::new());
+        for _x in 0..max_x + 1 {
+            result[y].push(String::from("."));
+        }
+    }
+
+    for p in positions {
+        result[p.y][p.x] = String::from("#");
+    }
+
+    for row in result {
+        info!("{}", row.join(""));
+    }
+
+    // This isn't used this time.
     Ok(0)
 }

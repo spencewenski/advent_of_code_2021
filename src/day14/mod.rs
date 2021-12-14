@@ -64,22 +64,22 @@ fn step(
         let middle = pairs.get(&entry.0).unwrap();
 
         // Decrement old pair
-        let count = new_pair_counts.entry(entry.0).or_insert(0);
+        let count = new_pair_counts.entry(entry.0).or_default();
         *count -= entry.1;
 
         // Increment new pairs
         let count = new_pair_counts
             .entry(format!("{}{}", left, middle))
-            .or_insert(0);
+            .or_default();
         *count += entry.1;
 
         let count = new_pair_counts
             .entry(format!("{}{}", middle, right))
-            .or_insert(0);
+            .or_default();
         *count += entry.1;
 
         // Increment the character counts
-        let count = new_char_counts.entry(*middle).or_insert(0);
+        let count = new_char_counts.entry(*middle).or_default();
         *count += entry.1;
     }
 
@@ -98,14 +98,14 @@ fn build_polymer(
             .collect_vec()
             .windows(2)
             .fold(HashMap::new(), |mut accum, window| {
-                let count = accum.entry(String::from_iter(window)).or_insert(0);
+                let count = accum.entry(String::from_iter(window)).or_default();
                 *count += 1;
                 accum
             });
 
     // Init the character counts map
     let char_counts = poly_template.chars().fold(HashMap::new(), |mut accum, c| {
-        let count = accum.entry(c).or_insert(0);
+        let count = accum.entry(c).or_default();
         *count += 1;
         accum
     });

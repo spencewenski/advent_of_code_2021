@@ -48,6 +48,9 @@ struct Node {
     position: Position,
 }
 
+// Need to re-implement this using a binaryheap. The current impl is a straight translation
+// of the wikipedia article high-level description, which is not efficient. Mostly because of
+// the iteration over the 'unvisited' hashset, I believe.
 fn dijkstra(
     lines: &Vec<Vec<usize>>,
     start: &Position,

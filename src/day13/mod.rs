@@ -1,4 +1,5 @@
 use crate::arguments::Arguments;
+use crate::common::position::Position;
 use crate::io::reader;
 use anyhow::Result;
 use itertools::Itertools;
@@ -17,7 +18,7 @@ pub fn day13(args: &Arguments) -> Result<()> {
             continue;
         }
         if section == 0 {
-            positions.push(Position::from_line(line));
+            positions.push(Position::from_comma_separated_line(line));
         } else {
             folds.push(Fold::from_line(line)?)
         }
@@ -34,31 +35,6 @@ pub fn day13(args: &Arguments) -> Result<()> {
     info!("{:?}", result);
 
     Ok(())
-}
-
-#[derive(Debug, Default, Eq, PartialEq, Hash, Clone)]
-struct Position {
-    x: usize,
-    y: usize,
-}
-
-impl Position {
-    fn new(x: usize, y: usize) -> Position {
-        Position { x, y }
-    }
-
-    fn from_line(line: String) -> Position {
-        let mut parts = line
-            .split(",")
-            .into_iter()
-            .map(|s| s.parse().unwrap())
-            .collect::<Vec<usize>>();
-
-        Position {
-            x: parts.remove(0),
-            y: parts.remove(0),
-        }
-    }
 }
 
 enum Fold {

@@ -2,7 +2,7 @@ use crate::arguments::Arguments;
 use crate::common::position::Position;
 use crate::io::reader;
 use anyhow::Result;
-use itertools::{min, Itertools};
+use itertools::Itertools;
 use std::cmp::{Ordering, Reverse};
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::io::BufRead;
@@ -44,74 +44,134 @@ fn get_max_y(board: &Vec<Vec<usize>>) -> usize {
 struct Node {
     visited: bool,
     tentative_distance: usize,
-    difficulty: usize,
+    cost: usize,
     position: Position,
 }
 
-// Need to re-implement this using a binaryheap. The current impl is a straight translation
-// of the wikipedia article high-level description, which is not efficient. Mostly because of
-// the iteration over the 'unvisited' hashset, I believe.
-fn dijkstra(
+impl Eq for Node {}
+
+impl PartialEq<Self> for Node {
+    fn eq(&self, other: &Self) -> bool {
+        self.tentative_distance.eq(&other.tentative_distance) && self.position.eq(&other.position)
+    }
+}
+
+impl PartialOrd<Self> for Node {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.tentative_distance
+            .partial_cmp(&other.tentative_distance)
+    }
+}
+
+impl Ord for Node {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.tentative_distance.cmp(&other.tentative_distance)
+    }
+}
+
+#[derive(Debug, Default)]
+struct Point {
+    position: Position,
+    tentative_total: usize,
+}
+
+impl Point {
+    fn new(position: Position, tentative_total: usize) -> Point {
+        Point {
+            position,
+            tentative_total,
+        }
+    }
+}
+
+impl Eq for Point {}
+
+impl PartialEq<Self> for Point {
+    fn eq(&self, other: &Self) -> bool {
+        self.tentative_total.eq(&other.tentative_total)
+    }
+}
+
+impl PartialOrd<Self> for Point {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.tentative_total.partial_cmp(&other.tentative_total)
+    }
+}
+
+impl Ord for Point {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.tentative_total.cmp(&other.tentative_total)
+    }
+}
+
+// This can definitely be improved...
+fn dijkstra2(
     lines: &Vec<Vec<usize>>,
     start: &Position,
     end: &Position,
     max_x: usize,
     max_y: usize,
 ) -> usize {
-    let mut nodes = Vec::new();
-    let mut unvisited: HashSet<Position> = HashSet::new();
+    let mut nodes = HashMap::new();
     for y in 0..lines.len() {
-        nodes.push(Vec::new());
         for x in 0..lines[y].len() {
             let position = Position::new(x, y);
             let node = Node {
                 position: position.clone(),
                 tentative_distance: usize::MAX,
-                difficulty: lines[y][x].into(),
+                cost: lines[y][x],
                 ..Default::default()
             };
-            unvisited.insert(position);
-            nodes[y].push(node);
+            nodes.insert(position, node);
         }
     }
-    nodes[start.y][start.x].tentative_distance = 0;
+    let mut heap = BinaryHeap::new();
 
-    let mut current = start.clone();
+    nodes
+        .entry(start.clone())
+        .and_modify(|x| x.tentative_distance = 0);
+    heap.push(Reverse(Point::new(start.clone(), 0)));
 
     loop {
+        let current = heap.pop();
+        if current.is_none() {
+            break;
+        }
+        let current = current.unwrap().0;
+        if current.position.eq(end) {
+            break;
+        }
+
+        // there may be duplicate positions in the heap, so track visited nodes and skip nodes
+        // that were already visited
+        // todo: is there a better way to do this while keeping the performance benefits
+        //  of the heap?
+        if nodes.get(&current.position).unwrap().visited {
+            continue;
+        }
+        nodes
+            .entry(current.position.clone())
+            .and_modify(|x| x.visited = true);
         let adjacent = current
+            .position
             .adjacent(max_x, max_y)
             .into_iter()
-            .filter(|p| unvisited.contains(p))
+            .filter(|p| !nodes.get(p).unwrap().visited)
             .collect_vec();
 
         for p in adjacent {
-            let new_tentative =
-                nodes[current.y][current.x].tentative_distance + nodes[p.y][p.x].difficulty;
-            if new_tentative < nodes[p.y][p.x].tentative_distance {
-                nodes[p.y][p.x].tentative_distance = new_tentative;
+            let new_tentative = nodes.get(&current.position).unwrap().tentative_distance
+                + nodes.get(&p).unwrap().cost;
+            if new_tentative < nodes.get(&p).unwrap().tentative_distance {
+                nodes
+                    .entry(p.clone())
+                    .and_modify(|x| x.tentative_distance = new_tentative);
+                heap.push(Reverse(Point::new(p, new_tentative)))
             }
-        }
-
-        nodes[current.y][current.x].visited = true;
-        unvisited.remove(&current);
-
-        if nodes[end.y][end.x].visited {
-            break;
-        } else {
-            let mut min_next = usize::MAX;
-            let mut next = None;
-            for p in unvisited.iter() {
-                if nodes[p.y][p.x].tentative_distance < min_next {
-                    min_next = nodes[p.y][p.x].tentative_distance;
-                    next = Some(p)
-                }
-            }
-            current = next.unwrap().clone();
         }
     }
 
-    nodes[end.y][end.x].tentative_distance
+    nodes.get(end).unwrap().tentative_distance
 }
 
 fn part1(lines: Vec<Vec<usize>>) -> Result<usize> {
@@ -121,7 +181,7 @@ fn part1(lines: Vec<Vec<usize>>) -> Result<usize> {
     let start = Position::new(0, 0);
     let end = Position::new(max_x - 1, max_y - 1);
 
-    Ok(dijkstra(&lines, &start, &end, max_x, max_y))
+    Ok(dijkstra2(&lines, &start, &end, max_x, max_y))
 }
 
 fn sub_board(original: &Vec<Vec<usize>>, increase_amount: usize) -> Vec<Vec<usize>> {
@@ -146,11 +206,10 @@ fn sub_board(original: &Vec<Vec<usize>>, increase_amount: usize) -> Vec<Vec<usiz
 }
 
 fn part2(lines: Vec<Vec<usize>>) -> Result<usize> {
-    let max_x = get_max_x(&lines);
     let max_y = get_max_y(&lines);
 
     let mut big_board: Vec<Vec<usize>> = Vec::new();
-    for y in 0..(5 * max_y) {
+    for _y in 0..(5 * max_y) {
         big_board.push(Vec::new());
     }
 
@@ -162,11 +221,6 @@ fn part2(lines: Vec<Vec<usize>>) -> Result<usize> {
             }
         }
     }
-
-    info!(
-        "Board has {} nodes",
-        get_max_x(&big_board) * get_max_y(&big_board)
-    );
 
     part1(big_board)
 }

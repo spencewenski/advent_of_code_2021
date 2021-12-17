@@ -102,13 +102,13 @@ where
 }
 
 impl Header {
-    fn from_bits<T1, T2>(bits: &BitVec<T1, T2>) -> Header
+    fn from_bits<T1, T2>(bits: &BitVec<T1, T2>, start: usize) -> Header
     where
         T1: bitvec::order::BitOrder,
         T2: bitvec::prelude::BitStore,
     {
-        let version = number_from_bits(bits, 0, 3);
-        let type_id = number_from_bits(bits, 3, 6);
+        let version = number_from_bits(bits, start, start + 3);
+        let type_id = number_from_bits(bits, start + 3, start + 6);
         let type_id = TypeId::from_number(type_id);
         Header { version, type_id }
     }
@@ -148,21 +148,21 @@ fn hex_to_bitvec(chars: &[char]) -> BitVec<Msb0, u64> {
         })
 }
 
-fn read_packet<T1, T2>(bits: &BitVec<T1, T2>)
+fn read_packet<T1, T2>(bits: &BitVec<T1, T2>, start: usize) -> Packet
 where
     T1: bitvec::order::BitOrder,
     T2: bitvec::prelude::BitStore,
 {
-    let header = Header::from_bits(bits);
-    info!("{:?}", header);
+    let header = Header::from_bits(bits, start);
+
+    Packet { header }
 }
 
 fn part1(chars: Vec<char>) -> Result<usize> {
     let bits: BitVec<Msb0, u64> = hex_to_bitvec(&chars);
 
-    print_bitvec(&bits);
-
-    read_packet(&bits);
+    let packet = read_packet(&bits, 0);
+    info!("{:?}", packet);
 
     Ok(0)
 }
